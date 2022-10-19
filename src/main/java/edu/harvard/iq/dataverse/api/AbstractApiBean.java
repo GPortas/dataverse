@@ -91,13 +91,15 @@ import static org.apache.commons.lang3.StringUtils.isNumeric;
 public abstract class AbstractApiBean {
 
     private static final Logger logger = Logger.getLogger(AbstractApiBean.class.getName());
-    private static final String DATAVERSE_KEY_HEADER_NAME = "X-Dataverse-key";
     private static final String PERSISTENT_ID_KEY=":persistentId";
     private static final String ALIAS_KEY=":alias";
     public static final String STATUS_ERROR = "ERROR";
     public static final String STATUS_OK = "OK";
     public static final String STATUS_WF_IN_PROGRESS = "WORKFLOW_IN_PROGRESS";
+    public static final String DATAVERSE_KEY_HEADER_NAME = "X-Dataverse-key";
+    public static final String DATAVERSE_KEY_PARAMETER_NAME = "key";
     public static final String DATAVERSE_WORKFLOW_INVOCATION_HEADER_NAME = "X-Dataverse-invocationID";
+    public static final String DATAVERSE_WORKFLOW_INVOCATION_PARAMETER_NAME = "invocationID";
 
     /**
      * Utility class to convey a proper error response using Java's exceptions.
@@ -320,15 +322,15 @@ public abstract class AbstractApiBean {
 
     protected String getRequestApiKey() {
         String headerParamApiKey = httpRequest.getHeader(DATAVERSE_KEY_HEADER_NAME);
-        String queryParamApiKey = httpRequest.getParameter("key");
-                
+        String queryParamApiKey = httpRequest.getParameter(DATAVERSE_KEY_PARAMETER_NAME);
+
         return headerParamApiKey!=null ? headerParamApiKey : queryParamApiKey;
     }
-    
+
     protected String getRequestWorkflowInvocationID() {
         String headerParamWFKey = httpRequest.getHeader(DATAVERSE_WORKFLOW_INVOCATION_HEADER_NAME);
-        String queryParamWFKey = httpRequest.getParameter("invocationID");
-                
+        String queryParamWFKey = httpRequest.getParameter(DATAVERSE_WORKFLOW_INVOCATION_PARAMETER_NAME);
+
         return headerParamWFKey!=null ? headerParamWFKey : queryParamWFKey;
     }
 

@@ -9,7 +9,6 @@ import javax.servlet.ServletException;
 
 
 /**
- *
  * @author GPortas
  */
 public abstract class CsrfFilter implements Filter {
