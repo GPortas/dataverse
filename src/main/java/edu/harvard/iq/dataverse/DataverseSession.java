@@ -1,5 +1,7 @@
 package edu.harvard.iq.dataverse;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
 import edu.harvard.iq.dataverse.PermissionServiceBean.StaticPermissionQuery;
 import edu.harvard.iq.dataverse.actionlogging.ActionLogRecord;
@@ -17,6 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.enterprise.context.SessionScoped;
@@ -259,4 +262,16 @@ public class DataverseSession implements Serializable{
         
     }
 
+    private Cache<String, Boolean> csrfTokenCache;
+
+    public void registerCsrfToken(String csrfToken) {
+        if (csrfTokenCache == null) {
+            csrfTokenCache = CacheBuilder.newBuilder().maximumSize(5000).expireAfterWrite(20, TimeUnit.MINUTES).build();
+        }
+        csrfTokenCache.put(csrfToken, Boolean.TRUE);
+    }
+
+    public boolean isCsrfTokenRegistered(String csrfToken) {
+        return (csrfTokenCache != null) && (csrfTokenCache.getIfPresent(csrfToken) != null);
+    }
 }
