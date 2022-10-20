@@ -15,7 +15,7 @@ import static edu.harvard.iq.dataverse.api.AbstractApiBean.*;
 
 
 /**
- * A filter that validates CSRF tokens to prevent CSRF attacks.
+ * A filter that validates a CSRF token to prevent CSRF attacks.
  *
  * @author GPortas
  */
@@ -32,8 +32,8 @@ public class CsrfTokenValidationFilter extends CsrfFilter {
             return;
         }
 
-        String csrfToken = httpRequest.getHeader(CSRF_TOKEN_HEADER_NAME);
-        if (csrfToken != null && session.isCsrfTokenRegistered(csrfToken)) {
+        String incomingCsrfToken = httpRequest.getHeader(CSRF_TOKEN_HEADER_NAME);
+        if (incomingCsrfToken != null && incomingCsrfToken.equals(session.getCsrfToken())) {
             chain.doFilter(request, response);
         } else {
             HttpServletResponse httpResponse = (HttpServletResponse) response;

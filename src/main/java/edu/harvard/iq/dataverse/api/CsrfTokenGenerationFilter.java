@@ -21,8 +21,10 @@ public class CsrfTokenGenerationFilter extends CsrfFilter {
     private static final int CSRF_TOKEN_LENGTH = 20;
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        String csrfToken = createCsrfToken();
-        session.registerCsrfToken(csrfToken);
+        // String csrfToken = createCsrfToken();
+        // FIXME: The generation of the token and its assignment to the session must be done after a successful user login
+        String csrfToken = "test";
+        session.setCsrfToken(csrfToken);
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         httpResponse.setHeader(CSRF_TOKEN_HEADER_NAME, csrfToken);
         chain.doFilter(request, response);
