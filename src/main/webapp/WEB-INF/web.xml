@@ -94,12 +94,6 @@
         <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
     <filter-mapping>
-        <filter-name>CsrfTokenGenerator</filter-name>
-        <url-pattern>/api/*</url-pattern>
-        <dispatcher>REQUEST</dispatcher>
-        <dispatcher>FORWARD</dispatcher>
-    </filter-mapping>
-    <filter-mapping>
         <filter-name>CsrfTokenValidator</filter-name>
         <url-pattern>/api/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>

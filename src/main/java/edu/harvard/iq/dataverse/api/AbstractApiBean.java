@@ -55,10 +55,7 @@ import edu.harvard.iq.dataverse.util.json.NullSafeJsonBuilder;
 import edu.harvard.iq.dataverse.validation.PasswordValidatorServiceBean;
 import java.io.StringReader;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -770,6 +767,20 @@ public abstract class AbstractApiBean {
             .add("data", Json.createObjectBuilder().add("message",msg)).build() )
             .type(MediaType.APPLICATION_JSON)
             .build();
+    }
+
+    protected Response ok(String msg, HashMap<String, Object> headers) {
+        ResponseBuilder responseBuilder = Response.ok().entity(Json.createObjectBuilder()
+                        .add("status", STATUS_OK)
+                        .add("data", Json.createObjectBuilder().add("message",msg)).build() )
+                .type(MediaType.APPLICATION_JSON);
+
+        if(headers != null) {
+            for (Map.Entry<String, Object> entry : headers.entrySet()) {
+                responseBuilder = responseBuilder.header(entry.getKey(), entry.getValue());
+            }
+        }
+        return responseBuilder.build();
     }
     
     protected Response ok( String msg, JsonObjectBuilder bld  ) {

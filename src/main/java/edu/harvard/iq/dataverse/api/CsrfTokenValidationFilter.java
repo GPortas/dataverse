@@ -1,33 +1,35 @@
 package edu.harvard.iq.dataverse.api;
 
+import edu.harvard.iq.dataverse.DataverseSession;
 import org.apache.http.HttpStatus;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.inject.Inject;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 
 import static edu.harvard.iq.dataverse.api.AbstractApiBean.*;
+import static edu.harvard.iq.dataverse.api.Users.CSRF_TOKEN_HEADER_NAME;
 
 
 /**
- * A filter that validates a CSRF token to prevent CSRF attacks.
+ * A filter that validates the CSRF token of an incoming request to prevent CSRF attacks.
  *
  * @author GPortas
  */
-public class CsrfTokenValidationFilter extends CsrfFilter {
+public class CsrfTokenValidationFilter implements Filter {
 
+    @Inject
+    protected DataverseSession session;
     private static final String CSRF_BLOCK_RESPONSE_BODY = "{status:\"error\",message:\"Request blocked by CSRF filter\"}";
     private static final String CSRF_BLOCK_RESPONSE_CONTENT_TYPE = "application/json";
+    private static final String URL_PATH_API_USERS_LOGIN = "/api/v1/users/login";
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        if (httpRequest.getMethod().equals(HttpMethod.GET) || isKeyBasedRequest(httpRequest)) {
+        if (httpRequest.getRequestURI().startsWith(URL_PATH_API_USERS_LOGIN) || isKeyBasedRequest(httpRequest)) {
             chain.doFilter(request, response);
             return;
         }
@@ -41,6 +43,14 @@ public class CsrfTokenValidationFilter extends CsrfFilter {
             httpResponse.setStatus(HttpStatus.SC_FORBIDDEN);
             httpResponse.setContentType(CSRF_BLOCK_RESPONSE_CONTENT_TYPE);
         }
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
+
+    @Override
+    public void destroy() {
     }
 
     private boolean isKeyBasedRequest(HttpServletRequest httpRequest) {

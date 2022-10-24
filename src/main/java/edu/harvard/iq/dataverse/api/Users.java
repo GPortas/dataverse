@@ -5,7 +5,9 @@
  */
 package edu.harvard.iq.dataverse.api;
 
-import static edu.harvard.iq.dataverse.api.AbstractApiBean.error;
+import edu.harvard.iq.dataverse.authorization.AuthenticationRequest;
+import edu.harvard.iq.dataverse.authorization.exceptions.AuthenticationFailedException;
+import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinAuthenticationProvider;
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
@@ -13,30 +15,25 @@ import edu.harvard.iq.dataverse.engine.command.impl.ChangeUserIdentifierCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.GetUserTracesCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.MergeInAccountCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.RevokeAllRolesCommand;
-import edu.harvard.iq.dataverse.metrics.MetricsUtil;
 import edu.harvard.iq.dataverse.util.FileUtil;
+import org.apache.commons.lang.RandomStringUtils;
 
-import static edu.harvard.iq.dataverse.util.json.JsonPrinter.json;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
 import javax.ejb.Stateless;
+import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Variant;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
+import java.io.StringReader;
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+import static edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinAuthenticationProvider.KEY_PASSWORD;
+import static edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinAuthenticationProvider.KEY_USERNAME_OR_EMAIL;
+import static edu.harvard.iq.dataverse.util.json.JsonPrinter.json;
 
 /**
  *
@@ -45,9 +42,10 @@ import javax.ws.rs.core.Variant;
 @Stateless
 @Path("users")
 public class Users extends AbstractApiBean {
-    
-    private static final Logger logger = Logger.getLogger(Users.class.getName());
-    
+
+    private static final int CSRF_TOKEN_LENGTH = 20;
+    public static final String CSRF_TOKEN_HEADER_NAME = "X-CSRF-Token";
+
     @POST
     @Path("{consumedIdentifier}/mergeIntoUser/{baseIdentifier}")
     public Response mergeInAuthenticatedUser(@PathParam("consumedIdentifier") String consumedIdentifier, @PathParam("baseIdentifier") String baseIdentifier) {
@@ -269,4 +267,38 @@ public class Users extends AbstractApiBean {
         }
     }
 
+    @POST
+    @Path("login")
+    @Produces("application/json")
+    public Response login(String jsonBody) {
+        if (jsonBody == null || jsonBody.isEmpty()) {
+            return error(Response.Status.BAD_REQUEST, "You must supply JSON to this API endpoint and it must contain the user login credentials.");
+        }
+
+        StringReader rdr = new StringReader(jsonBody);
+        JsonObject json = Json.createReader(rdr).readObject();
+        AuthenticationRequest authReq = new AuthenticationRequest();
+        try {
+            authReq.putCredential(KEY_USERNAME_OR_EMAIL, json.getString("username"));
+            authReq.putCredential(KEY_PASSWORD, json.getString("password"));
+        } catch (Exception e) {
+            return error( Response.Status.BAD_REQUEST, "Invalid JSON supplied");
+        }
+
+        try {
+            AuthenticatedUser r = authSvc.getUpdateAuthenticatedUser(BuiltinAuthenticationProvider.PROVIDER_ID, authReq);
+            session.setUser(r);
+            String csrfToken = createCsrfToken();
+            session.setCsrfToken(csrfToken);
+            HashMap<String, Object> responseHeaders= new HashMap();
+            responseHeaders.put(CSRF_TOKEN_HEADER_NAME, csrfToken);
+            return ok("User logged in", responseHeaders);
+        } catch (AuthenticationFailedException ex) {
+            return error(Response.Status.UNAUTHORIZED, "Invalid user credentials provided");
+        }
+    }
+
+    private String createCsrfToken() {
+        return RandomStringUtils.random(CSRF_TOKEN_LENGTH, 0, 0, true, true, null, new SecureRandom());
+    }
 }
