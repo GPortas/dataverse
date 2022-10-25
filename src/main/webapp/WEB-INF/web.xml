@@ -70,12 +70,12 @@
         <filter-class>edu.harvard.iq.dataverse.api.ApiRouter</filter-class>
     </filter>
     <filter>
-        <filter-name>Blocker</filter-name>
-        <filter-class>edu.harvard.iq.dataverse.api.ApiBlockingFilter</filter-class>
-    </filter>
-    <filter>
         <filter-name>CsrfTokenValidator</filter-name>
         <filter-class>edu.harvard.iq.dataverse.api.CsrfTokenValidationFilter</filter-class>
+    </filter>
+    <filter>
+        <filter-name>Blocker</filter-name>
+        <filter-class>edu.harvard.iq.dataverse.api.ApiBlockingFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>Router</filter-name>
@@ -84,13 +84,13 @@
         <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
     <filter-mapping>
-        <filter-name>Blocker</filter-name>
+        <filter-name>CsrfTokenValidator</filter-name>
         <url-pattern>/api/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>
         <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
     <filter-mapping>
-        <filter-name>CsrfTokenValidator</filter-name>
+        <filter-name>Blocker</filter-name>
         <url-pattern>/api/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>
         <dispatcher>FORWARD</dispatcher>
