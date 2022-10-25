@@ -501,6 +501,44 @@ public class UsersIT {
 
     }
 
+    @Test
+    public void testLogin() {
+        Response createUser = UtilIT.createRandomUser();
+        createUser.prettyPrint();
+        assertEquals(200, createUser.getStatusCode());
+
+        String usernameOfUser = UtilIT.getUsernameFromResponse(createUser);
+        String loginEndpoint = "/api/users/login";
+
+        // Shouldn't be able to log in with invalid credentials
+
+        JsonObjectBuilder invalidCredentialsData = Json.createObjectBuilder();
+        invalidCredentialsData.add("username", usernameOfUser);
+        invalidCredentialsData.add("password", "wrongpassword");
+
+        Response invalidCredentialsLoginResponse = given()
+                .body(invalidCredentialsData.build().toString())
+                .post(loginEndpoint);
+        invalidCredentialsLoginResponse.prettyPrint();
+        invalidCredentialsLoginResponse.then().assertThat()
+                .body("message", equalTo("Invalid user credentials provided"))
+                .statusCode(UNAUTHORIZED.getStatusCode());
+
+        // Should be able to log in with valid credentials
+
+        JsonObjectBuilder validCredentialsData = Json.createObjectBuilder();
+        validCredentialsData.add("username", usernameOfUser);
+        validCredentialsData.add("password", usernameOfUser);
+
+        Response successfulLoginResponse = given()
+                .body(validCredentialsData.build().toString())
+                .post(loginEndpoint);
+        successfulLoginResponse.prettyPrint();
+        successfulLoginResponse.then().assertThat()
+                .body("data.message", equalTo("User logged in"))
+                .statusCode(OK.getStatusCode());
+    }
+
     private Response convertUserFromBcryptToSha1(long idOfBcryptUserToConvert, String password) {
         JsonObjectBuilder data = Json.createObjectBuilder();
         data.add("builtinUserId", idOfBcryptUserToConvert);
