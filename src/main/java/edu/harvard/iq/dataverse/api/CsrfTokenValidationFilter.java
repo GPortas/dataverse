@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static edu.harvard.iq.dataverse.api.Users.CSRF_TOKEN_HEADER_NAME;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 
 /**
@@ -23,7 +24,6 @@ public class CsrfTokenValidationFilter implements Filter {
     @Inject
     protected DataverseSession session;
     private static final String CSRF_BLOCK_RESPONSE_BODY = "{status:\"error\",message:\"Request blocked by CSRF filter\"}";
-    private static final String CSRF_BLOCK_RESPONSE_CONTENT_TYPE = "application/json";
     private static final String URL_PATH_API_USERS_LOGIN = "/api/v1/users/login";
     private static final String COOKIE_NAME_JSESSIONID = "JSESSIONID";
 
@@ -42,7 +42,7 @@ public class CsrfTokenValidationFilter implements Filter {
             HttpServletResponse httpResponse = (HttpServletResponse) response;
             httpResponse.getWriter().println(CSRF_BLOCK_RESPONSE_BODY);
             httpResponse.setStatus(HttpStatus.SC_FORBIDDEN);
-            httpResponse.setContentType(CSRF_BLOCK_RESPONSE_CONTENT_TYPE);
+            httpResponse.setContentType(APPLICATION_JSON);
         }
     }
 
