@@ -620,6 +620,16 @@ public class Files extends AbstractApiBean {
         }
     }
 
+    @Path("{id}")
+    @DELETE
+    public Response deleteDatafile(@PathParam("id") String id) {
+        return response(req -> {
+            DataFile dataFile = findDataFileOrDie(id);
+            execCommand(new UpdateDatasetVersionCommand(dataFile.getOwner(), req, dataFile));
+            return ok("File " + id + " deleted");
+        });
+    }
+
     /**
      * Attempting to run metadata export, for all the formats for which we have
      * metadata Exporters.

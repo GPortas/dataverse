@@ -1192,6 +1192,12 @@ public class UtilIT {
                 .delete(swordConfiguration.getBaseUrlPathCurrent() + "/edit-media/file/" + fileId);
     }
 
+    static Response deleteFileViaNativeApi(String fileId, String apiToken) {
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .delete("/api/files/" + fileId);
+    }
+
     static Response publishDatasetViaSword(String persistentId, String apiToken) {
         Response publishResponse =  given()
                 .auth().basic(apiToken, EMPTY_STRING)

@@ -1834,4 +1834,38 @@ public class FilesIT {
 
     }
 
+    @Test
+    public void testDeleteDatafileViaNativeApi() {
+        // Create User
+        String apiToken = createUserGetToken();
+
+        // Create Dataverse
+        String dataverseAlias = createDataverseGetAlias(apiToken);
+
+        // Create Dataset
+        Integer datasetId = createDatasetGetId(dataverseAlias, apiToken);
+
+        // Create Datafile
+        String pathToFile = "src/main/webapp/resources/images/dataverseproject.png";
+        Response uploadFileViaNativeResponse = UtilIT.uploadFileViaNative(datasetId.toString(), pathToFile, apiToken);
+        logger.info(uploadFileViaNativeResponse.prettyPrint());
+        long fileId = JsonPath.from(uploadFileViaNativeResponse.body().asString()).getLong("data.files[0].dataFile.id");
+
+        // Delete existing Datafile
+        Response deleteResponseForExistingDatafile = UtilIT.deleteFileViaNativeApi(Long.toString(fileId), apiToken);
+        logger.info(deleteResponseForExistingDatafile.prettyPrint());
+
+        deleteResponseForExistingDatafile.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data.message", equalTo(String.format("File %s deleted", fileId)));
+
+        // Delete an already deleted Datafile
+        Response deleteResponseForAlreadyDeletedDatafile = UtilIT.deleteFileViaNativeApi(Long.toString(fileId), apiToken);
+        logger.info(deleteResponseForAlreadyDeletedDatafile.prettyPrint());
+
+        deleteResponseForAlreadyDeletedDatafile.then().assertThat()
+                .statusCode(NOT_FOUND.getStatusCode())
+                .body("message", equalTo(String.format("File with ID %s not found.", fileId)));
+    }
+
 }
