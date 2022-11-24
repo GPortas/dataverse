@@ -5,7 +5,9 @@ function IdPSelectUIParms() {
     // Adjust the following to fit into your local configuration
     //
     this.alwaysShow = true;          // If true, this will show results as soon as you start typing
-    this.dataSource = window.location.hostname === 'localhost' ? '/resources/dev/sample-shib-identities.json' : '/Shibboleth.sso/DiscoFeed'; // where to get the data from (dev vs. prod)
+    // this.dataSource = window.location.hostname === 'localhost' ? '/resources/dev/sample-shib-identities.json' : '/Shibboleth.sso/DiscoFeed'; // where to get the data from (dev vs. prod)
+    // PoC: Get the data from /Shibboleth.sso/DiscoFeed for both environments
+    this.dataSource = window.location.hostname === 'localhost' ? '/Shibboleth.sso/DiscoFeed' : '/Shibboleth.sso/DiscoFeed'; // where to get the data from (dev vs. prod)
     this.defaultLanguage = 'en';     // Language to use if the browser local doesnt have a bundle
     this.defaultLogo = 'resources/images/shib_no_logo.png';
     this.defaultLogoWidth = 1;
