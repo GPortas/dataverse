@@ -5,6 +5,14 @@
  */
 package edu.harvard.iq.dataverse.api;
 
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jwt.JWTParser;
+import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.Issuer;
+import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import edu.harvard.iq.dataverse.authorization.AuthenticationRequest;
 import edu.harvard.iq.dataverse.authorization.exceptions.AuthenticationFailedException;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinAuthenticationProvider;
@@ -27,6 +35,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.StringReader;
 import java.security.SecureRandom;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -300,5 +309,29 @@ public class Users extends AbstractApiBean {
 
     private String createCsrfToken() {
         return RandomStringUtils.random(CSRF_TOKEN_LENGTH, 0, 0, true, true, null, new SecureRandom());
+    }
+
+    // TODO: At the moment this is just a PoC for testing OIDC validation with nimbus, it is necessary to properly evolve and encapsulate this logic.
+    @POST
+    @Path("loginOidc/{idToken}")
+    @Produces("application/json")
+    public Response loginOidc(@PathParam("idToken") String idToken) {
+        try {
+            // IDTokenValidator idTokenValidator = new IDTokenValidator(new Issuer("https://localhost/auth/realms/oidc-realm"), new ClientID("oidc-client"), JWSAlgorithm.RS256, new URL("https://localhost/auth/realms/oidc-realm/protocol/openid-connect/certs"));
+            // Using this way since we are facing issues while retrieving JWK from URL
+            IDTokenValidator idTokenValidator = new IDTokenValidator(new Issuer("https://localhost/auth/realms/oidc-realm"), new ClientID("oidc-client"), JWSAlgorithm.RS256, new JWKSet(getJWKKey()));
+            SignedJWT signedJWT = (SignedJWT) JWTParser.parse(idToken);
+            idTokenValidator.validate(signedJWT, null);
+            return ok("OIDC idToken validated");
+        } catch (Exception e) {
+            return error(Response.Status.UNAUTHORIZED, "Invalid user credentials provided: " + e.getMessage());
+        }
+    }
+
+    // Retrieved from https://localhost/auth/realms/oidc-realm/protocol/openid-connect/certs
+    // Should be edited to match your OIDC provider JWK
+    // New mechanism idea: The JWK key value could be provided via Dataverse API when configuring an OIDC provider for Dataverse
+    private JWK getJWKKey() throws ParseException {
+        return JWK.parse("{\"kid\":\"2rKfDSA8sP4FO-PJ3SmKU4AqoDySdGS_eUj2bVq8PD8\",\"kty\":\"RSA\",\"alg\":\"RS256\",\"use\":\"sig\",\"n\":\"tBOX-t86fCWWo5oO53kVfn1gCiPwi7-lgeObQofo2FP3hIwu6QOYiDyiSMpbPwKZ9A7pTk3nrutUewCCwHmwxtg2epKZRGH9J-0y6YHChDdw_4_DqTyhr-ysdyU6aCX_htG-y5FSll0k5vr8RV-Ah6QuK9OFtW17VoaR_6xsr6z_S9_6Dv2BmbjNp67oNMPZQ35lhFBBiWIJf56fJh3rrc-lSHHVBoDrA_HZRdC7PDGSnVkVqNx0OPz50wZv_X41jDCCBSBtUOZWV_kqWl2pF076Zmt4e6tnaUDcQh9wh6NCy4QgmA1yWmzP5CTcdMyaYPWJlWMuG-WuxCKNaKMd_Q\",\"e\":\"AQAB\",\"x5c\":[\"MIICozCCAYsCBgGE6Sr49TANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDDApvaWRjLXJlYWxtMB4XDTIyMTIwNjIwMzgzOFoXDTMyMTIwNjIwNDAxOFowFTETMBEGA1UEAwwKb2lkYy1yZWFsbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALQTl/rfOnwllqOaDud5FX59YAoj8Iu/pYHjm0KH6NhT94SMLukDmIg8okjKWz8CmfQO6U5N567rVHsAgsB5sMbYNnqSmURh/SftMumBwoQ3cP+Pw6k8oa/srHclOmgl/4bRvsuRUpZdJOb6/EVfgIekLivThbVte1aGkf+sbK+s/0vf+g79gZm4zaeu6DTD2UN+ZYRQQYliCX+enyYd663PpUhx1QaA6wPx2UXQuzwxkp1ZFajcdDj8+dMGb/1+NYwwggUgbVDmVlf5KlpdqRdO+mZreHurZ2lA3EIfcIejQsuEIJgNclpsz+Qk3HTMmmD1iZVjLhvlrsQijWijHf0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAcz77NtYHno6c8TYF9OSoxuCgzQ77eKKhPm6Rl8RBcsSFiqYwaapE6YC1Arpuj/GMc5fE9/FiFaBQfldDUg4abA14WHmxD0y/YqpccsyVZv5jC/7CCbGFrJOD4qze3oHIM534sIcQl40NGUFXFfdnkz7wyOulLyDBl9FLnrEehntyT4/grX9hutppo0xPYt3lRpFe6NRg2hSYd4W3bJoX5+7KuJaNGrvYCuQWsvz0XOQBDm9lwXzWs6N6m9f75bA125tDefxkY3K4pQamxQC0vsoSs0f/QJBr6ZISppFDOBK9Z//9DSqC/LA5zoZyaIwMV9uP5dP1xvMDWtk2n0Yz1g==\"],\"x5t\":\"RIG0qyfQ-AOU1EosrgAS_N1CzOE\",\"x5t#S256\":\"9f4K2oLBi6GPwt_PqZIEmcOmpQOVem6OrfVCCBHMiXI\"}");
     }
 }
