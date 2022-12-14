@@ -237,6 +237,7 @@ public class Datasets extends AbstractApiBean {
     }
     
     @GET
+    @Secured
     @Path("{id}")
     public Response getDataset(@PathParam("id") String id, @Context UriInfo uriInfo, @Context HttpHeaders headers, @Context HttpServletResponse response) {
         return response( req -> {
