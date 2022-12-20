@@ -11,17 +11,17 @@ import javax.ws.rs.container.ContainerRequestContext;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-public class HTTPBasicAuthMechanism implements AuthMechanism {
+public class HTTPBasicAuthMechanism extends AuthMechanism {
 
     @EJB
-    protected AuthenticationServiceBean authSvc;
+    AuthenticationServiceBean authSvc;
 
     private static final String AUTHORIZATION_HEADER_NAME = "Authorization";
     private static final String AUTHORIZATION_HEADER_PREFIX = "Basic";
 
     // TODO: More descriptive exceptions
     @Override
-    public AuthenticatedUser authenticateRequest(ContainerRequestContext containerRequestContext) throws AuthException {
+    public AuthenticatedUser getAuthenticatedUserFromRequest(ContainerRequestContext containerRequestContext) throws AuthException {
         String authHeader = containerRequestContext.getHeaderString(AUTHORIZATION_HEADER_NAME);
         if (authHeader == null || !authHeader.startsWith(AUTHORIZATION_HEADER_PREFIX)) {
             throw new AuthException();
