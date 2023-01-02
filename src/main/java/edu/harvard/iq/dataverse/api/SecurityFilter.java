@@ -1,7 +1,7 @@
 package edu.harvard.iq.dataverse.api;
 
 import edu.harvard.iq.dataverse.api.auth.AuthException;
-import edu.harvard.iq.dataverse.api.auth.HTTPBasicAuthMechanism;
+import edu.harvard.iq.dataverse.api.auth.JWTAuthMechanism;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -18,14 +18,14 @@ import java.io.IOException;
 public class SecurityFilter implements ContainerRequestFilter {
 
     @Inject
-    private HTTPBasicAuthMechanism httpBasicAuthMechanism;
+    private JWTAuthMechanism jwtAuthMechanism;
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
         // Cascade filtering of auth mechanisms goes here
-        // Testing HTTP Basic Authentication for this PoC
+        // Testing JWT Authentication for this PoC
         try {
-            httpBasicAuthMechanism.authenticateRequest(containerRequestContext);
+            jwtAuthMechanism.authenticateRequest(containerRequestContext);
         } catch (AuthException e) {
             containerRequestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
         }
