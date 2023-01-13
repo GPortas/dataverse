@@ -1,29 +1,6 @@
 package edu.harvard.iq.dataverse.api;
 
-import edu.harvard.iq.dataverse.DataFile;
-import edu.harvard.iq.dataverse.DataFileServiceBean;
-import edu.harvard.iq.dataverse.Dataset;
-import edu.harvard.iq.dataverse.DatasetFieldServiceBean;
-import edu.harvard.iq.dataverse.DatasetFieldType;
-import edu.harvard.iq.dataverse.DatasetLinkingDataverse;
-import edu.harvard.iq.dataverse.DatasetLinkingServiceBean;
-import edu.harvard.iq.dataverse.DatasetServiceBean;
-import edu.harvard.iq.dataverse.DatasetVersionServiceBean;
-import edu.harvard.iq.dataverse.Dataverse;
-import edu.harvard.iq.dataverse.DataverseLinkingDataverse;
-import edu.harvard.iq.dataverse.DataverseLinkingServiceBean;
-import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
-import edu.harvard.iq.dataverse.DataverseServiceBean;
-import edu.harvard.iq.dataverse.DvObject;
-import edu.harvard.iq.dataverse.DvObjectServiceBean;
-import edu.harvard.iq.dataverse.EjbDataverseEngine;
-import edu.harvard.iq.dataverse.GuestbookResponseServiceBean;
-import edu.harvard.iq.dataverse.MetadataBlock;
-import edu.harvard.iq.dataverse.MetadataBlockServiceBean;
-import edu.harvard.iq.dataverse.PermissionServiceBean;
-import edu.harvard.iq.dataverse.RoleAssigneeServiceBean;
-import edu.harvard.iq.dataverse.UserNotificationServiceBean;
-import edu.harvard.iq.dataverse.UserServiceBean;
+import edu.harvard.iq.dataverse.*;
 import edu.harvard.iq.dataverse.actionlogging.ActionLogServiceBean;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
@@ -65,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
+import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -255,6 +233,9 @@ public abstract class AbstractApiBean {
     @EJB 
     GuestbookResponseServiceBean gbRespSvc;
 
+    @Inject
+    DataverseSession session;
+
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     protected EntityManager em;
 
@@ -365,7 +346,7 @@ public abstract class AbstractApiBean {
         final String requestApiKey = getRequestApiKey();
         final String requestWFKey = getRequestWorkflowInvocationID();
         if (requestApiKey == null && requestWFKey == null && getRequestParameter(UrlSignerUtil.SIGNED_URL_TOKEN)==null) {
-            return GuestUser.get();
+            return getSessionUserOrGuest();
         }
         PrivateUrlUser privateUrlUser = privateUrlSvc.getPrivateUrlUserFromToken(requestApiKey);
         // For privateUrlUsers restricted to anonymized access, all api calls are off-limits except for those used in the UI
@@ -382,6 +363,14 @@ public abstract class AbstractApiBean {
             return privateUrlUser;
         }
         return findAuthenticatedUserOrDie(requestApiKey, requestWFKey);
+    }
+
+    private User getSessionUserOrGuest() {
+        User sessionUser = session.getUser();
+        if (sessionUser != null) {
+            return sessionUser;
+        }
+        return GuestUser.get();
     }
 
     /**
